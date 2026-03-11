@@ -51,21 +51,24 @@ Her seferinde uzun komutlar yazmamak için masaüstünü tek komutla başlatacak
 
 * **Açılan Ekrana Aşağıdaki Kodları Yapıştırma:**
     ```sh
-    #!/data/data/com/termux/files/usr/bin/sh
+    #!/data/data/com.termux/files/usr/bin/sh
 
     echo "Grafik arayüzü başlatılıyor..."
 
     # Termux:X11 sunucusunu arka planda (:0 numaralı ekranda) başlat
     termux-x11 :0 &
-    
+
     # Sunucunun başlaması için 2 saniye bekle
     sleep 2
+
+    # DISPLAY değişkenini ayarla
+    export DISPLAY=:0
 
     # PulseAudio ses sunucusunu başlat
     pulseaudio --start
 
     # ÖNEMLİ: XFCE masaüstünü :0 numaralı sanal ekrana gönderen komut.
-    DISPLAY=:0 dbus-launch --exit-with-session xfce4-session
+    dbus-launch --exit-with-session xfce4-session
 
     echo "Oturum kapatıldı."
     ```
@@ -137,5 +140,104 @@ Masaüstü ortamınıza yeni programlar eklemek için Termux komut satırını k
     * `abiword`: Word belgeleri için kelime işlemci.
     * `gnumeric`: Excel tabloları için hesap tablosu programı.
     * `gimp`: Gelişmiş resim düzenleyici.
+
+---
+
+## Bölüm 4: VS Code Kurulumu (code-server)
+
+Android üzerinde doğrudan VS Code çalıştırmak mümkün olmadığından, VS Code'un tarayıcı üzerinden çalışan açık kaynak portu olan **code-server** kullanılır.
+
+### **Adım 4.1: Gerekli Paketleri Kurma**
+
+```bash
+pkg install nodejs -y
+```
+
+### **Adım 4.2: code-server'ı Kurma**
+
+```bash
+npm install -g code-server
+```
+
+> **Not:** Bu işlem ARM64 mimarisinde birkaç dakika sürebilir, sabırla bekleyin.
+
+### **Adım 4.3: code-server'ı Başlatma**
+
+Termux'ta aşağıdaki komutu çalıştırın:
+
+```bash
+code-server --bind-addr 127.0.0.1:8080 --auth none
+```
+
+### **Adım 4.4: VS Code'a Erişim**
+
+#### **Seçenek A: XFCE İçinden Tarayıcı ile (Tavsiye Edilen)**
+1. XFCE masaüstünü başlatın (`./start`).
+2. XFCE içinde **Firefox** tarayıcısını açın.
+3. Adres çubuğuna şunu yazın: `http://127.0.0.1:8080`
+4. VS Code arayüzü tarayıcıda açılacaktır.
+
+#### **Seçenek B: Android Tarayıcısı ile**
+1. Termux'ta code-server'ı başlatın.
+2. Android'deki herhangi bir tarayıcıda (Chrome, Firefox vb.) `http://127.0.0.1:8080` adresini açın.
+
+### **Adım 4.5: code-server'ı Otomatik Başlatma (İsteğe Bağlı)**
+
+`start` script'inize code-server'ı da eklemek için aşağıdaki satırı `dbus-launch` satırından önce ekleyin:
+
+```sh
+# code-server'ı arka planda başlat
+code-server --bind-addr 127.0.0.1:8080 --auth none &
+```
+
+### **Adım 4.6: Türkçe Dil Desteği Ekleme**
+
+code-server arayüzünde Türkçe kullanmak için:
+1. VS Code'u açın (`http://127.0.0.1:8080`).
+2. `Ctrl+Shift+X` ile Eklentiler panelini açın.
+3. `Turkish Language Pack` aratın ve kurun.
+4. VS Code'u yenileyin.
+
+---
+
+## Bölüm 5: Sorun Giderme
+
+### **Sorun 1: Ekran Açılmıyor / "No Display" Hatası**
+* **Çözüm:** Termux:X11 uygulamasının arka planda açık olduğundan emin olun. `start` scriptini çalıştırmadan önce Termux:X11'i açıp arka plana alın.
+
+### **Sorun 2: Ses Çalışmıyor**
+* **Çözüm:** PulseAudio'yu elle yeniden başlatın:
+    ```bash
+    pulseaudio --kill
+    pulseaudio --start
+    ```
+
+### **Sorun 3: Arayüz Çok Küçük Görünüyor**
+* **Çözüm:** Bölüm 2.2'deki HiDPI ayarlarını uygulayın. DPI değerini `160`–`192` arasında deneyin.
+
+### **Sorun 4: `pkg upgrade` Sırasında Hata**
+* **Çözüm:** Termux depo listesini güncelleyin:
+    ```bash
+    pkg update -y && pkg upgrade -y
+    ```
+    Eğer sorun devam ederse:
+    ```bash
+    pkg install termux-tools -y
+    termux-fix-shebang
+    ```
+
+### **Sorun 5: code-server Çok Yavaş**
+* **Çözüm:** Daha az eklenti açık tutun. Aşırı bellek kullanımını önlemek için `--max-old-space-size` sınırı ekleyin:
+    ```bash
+    NODE_OPTIONS="--max-old-space-size=512" code-server --bind-addr 127.0.0.1:8080 --auth none
+    ```
+
+### **Sorun 6: XFCE Oturumu Donuyor**
+* **Çözüm:** Termux'a dönüp `xfce4-session`'ı yeniden başlatın:
+    ```bash
+    pkill xfce4-session
+    export DISPLAY=:0
+    dbus-launch --exit-with-session xfce4-session &
+    ```
 
 ---
